@@ -1,0 +1,4 @@
+id_source,bank_source,id_destination,bank_destination,amount
+b,alice,g,charlie,100
+b,alice,a,alice,100
+d,bob,c,alice,100
