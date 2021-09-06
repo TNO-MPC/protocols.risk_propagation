@@ -8,6 +8,7 @@ from typing import Tuple, cast
 
 import pandas as pd
 import pytest
+
 from tno.mpc.communication import Pool
 from tno.mpc.communication.httphandlers import logger
 from tno.mpc.communication.test import (  # pylint: disable=unused-import

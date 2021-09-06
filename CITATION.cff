@@ -18,6 +18,6 @@ contact:
 repository-code: https://github.com/TNO-MPC/protocols.risk_propagation
 repository-artifact: https://pypi.org/project/tno.mpc.protocols.risk_propagation
 title: TNO MPC Lab - Protocols - Secure Risk Propagation
-version: v0.1.6
-date-released: 2021-06-28
+version: v0.1.8
+date-released: 2021-09-06
 

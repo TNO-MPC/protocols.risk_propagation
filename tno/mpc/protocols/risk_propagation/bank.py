@@ -4,6 +4,7 @@ Configuration of a bank
 from typing import Dict, Optional, Set, Union
 
 import pandas as pd
+
 from tno.mpc.encryption_schemes.paillier import Paillier, PaillierCiphertext
 from tno.mpc.protocols.distributed_keygen import DistributedPaillier
 

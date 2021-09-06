@@ -15,11 +15,11 @@ from typing import (
 )
 
 import pandas as pd
+
 from tno.mpc.encryption_schemes.paillier import Paillier
 from tno.mpc.protocols.distributed_keygen import DistributedPaillier
 
 import tno.mpc.protocols.risk_propagation.bank  # to make sphinx find Bank correctly
-
 from .account import Account
 
 

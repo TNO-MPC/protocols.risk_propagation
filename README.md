@@ -10,7 +10,7 @@ The research activities that led to this protocol and implementation were funded
 
 ## Documentation
 
-Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.mpc.tno.nl/protocols/risk_propagation/0.1.6).
+Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.mpc.tno.nl/protocols/risk_propagation/0.1.8).
 
 ## Install
 
@@ -37,7 +37,7 @@ As input of the algorithm, every party possesses a list of nodes (i.e. bank acco
 Using encrypted incoming risk scores scores from other parties, every party can securely update its risk scores using the formula for risk propagation.
 After a set number of iterations, the eventual risk scores are revealed to the parties that own the accounts, using the distributed private key.
 
-Figure 1 demonstrates a high-level overview of the idea behind the protocol.
+In [ERCIM News 126 (July 2021)](https://ercim-news.ercim.eu/en126/special/privacy-preserving-collaborative-money-laundering-detection), we presented a more elaborate protocol descriptions. Figure 1 demonstrates a high-level overview of the idea behind the protocol. Figure 2 visualizes the decentralized approach.
 <figure>
   <img src="https://raw.githubusercontent.com/TNO-MPC/protocols.risk_propagation/main/assets/risk-propagation-overview.svg" width=100% alt="Risk Propagation High Level Overview"/>
   <figcaption>
@@ -49,9 +49,24 @@ However, how can we achieve something similar when there is only partial (local)
   </figcaption>
 </figure>
 
+<figure>
+  <img src="https://raw.githubusercontent.com/TNO-MPC/protocols.risk_propagation/main/assets/approach.svg" width=100% alt="Risk Propagation Decentralized Approach"/>
+  <figcaption>
+
+__Figure 2.__ _In our approach, the data is analyzed in a decentralized manner. From left-to-right, we visualize encryption,
+propagation and decryption. The parties encrypt their data using the additive homomorphic encryption scheme, no
+communication takes place. Once the data is encrypted locally, the distributed propagation (computation) over the
+encrypted data takes place. During this computation the data remains encrypted, the parties communicate intermediate
+(encrypted) results, and there is no central party. During the decryption phase, we need to decrypt the encrypted values
+with every party's key. We view the decryption from the green party's perspective. The lock on the risk scores belonging to
+the green party is opened part-by-part and the final opening happens by the green party. This ensures that only the green
+party gets to see the decrypted, propagated risk scores of his own bank accounts._
+  </figcaption>
+</figure>
+
 ## Usage
 
-The protocol is symmetric.
+The protocol is symmetric. For determining a secure set of parameters for the distributed keygen we refer to [protocols.distributed_keygen](https://github.com/TNO-MPC/protocols.distributed_keygen/#usage).
 
 >`example_usage.py`
 >```python
@@ -76,7 +91,7 @@ The protocol is symmetric.
 >corruption_threshold = 1  # corruption threshold
 >key_length = 256  # bit length of private key
 >prime_thresh = 2000  # threshold for primality check
->correct_param_biprime = 100  # correctness parameter for biprimality test
+>correct_param_biprime = 40  # correctness parameter for biprimality test
 >stat_sec_shamir = (
 >    40  # statistical security parameter for secret sharing over the integers
 >)
