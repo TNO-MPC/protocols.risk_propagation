@@ -2,9 +2,12 @@
 Configuration of a bank
 """
 import asyncio
+import logging
+from numbers import Integral
 from typing import Dict, Optional, Tuple, Union
 
-import pandas as pd
+import numpy as np
+import numpy.typing as npt
 
 from tno.mpc.communication import Pool
 from tno.mpc.encryption_schemes.paillier import PaillierCiphertext
@@ -12,6 +15,8 @@ from tno.mpc.encryption_schemes.utils import FixedPoint
 from tno.mpc.protocols.distributed_keygen import DistributedPaillier
 
 from .bank import Bank
+
+logger = logging.getLogger(__name__)
 
 
 class Player:
@@ -21,13 +26,13 @@ class Player:
 
     # This factor is used to make sure that the computation of the risk scores
     # remains accurate enough (we have to compensate for scalar division)
-    COMPENSATION_FACTOR = 10 ** 12
+    COMPENSATION_FACTOR = 10**12
 
     def __init__(
         self,
         name: str,
-        accounts: pd.DataFrame,
-        transactions: pd.DataFrame,
+        accounts: npt.NDArray[np.object_],
+        transactions: npt.NDArray[np.object_],
         pool: Pool,
         paillier: DistributedPaillier,
         delta: float = 0.5,
@@ -36,8 +41,8 @@ class Player:
         Initializes a player instance
 
         :param name: the name of the player
-        :param accounts: a dataframe of accounts containing an initial risk score per account
-        :param transactions: a dataframe of transactions
+        :param accounts: an array of accounts containing an initial risk score per account
+        :param transactions: an array of transactions
         :param pool: the communication pool to use
         :param paillier: an instance of DistributedPaillier
         :param delta: the delta to use
@@ -54,6 +59,7 @@ class Player:
         self.bank.process_accounts(accounts, delta)
 
         for bank in self.banks:
+            logger.info(f"Processing transactions of bank {bank.name}")
             bank.process_transactions(transactions)
 
     @property
@@ -109,7 +115,7 @@ class Player:
 
     async def _decrypt_bank(
         self, party: str
-    ) -> Dict[str, Union[int, float, FixedPoint, None]]:
+    ) -> Dict[str, Union[Integral, float, FixedPoint, None]]:
         """
         Decrypts the risk scores of party and reveals them to party
 
@@ -117,21 +123,31 @@ class Player:
         :return: a dictionary of decrypted risk scores
         """
         if party in (_.name for _ in self.other_banks):
-            risk_scores = await self._pool.recv(party, msg_id=f"Decryption {party}")
+            msg_id = f"Decryption {party}"
+            logger.debug(f"Awaiting message with id {msg_id}")
+            risk_scores = await self._pool.recv(party, msg_id)
         else:
             risk_scores = self.bank.get_risk_scores()
-            await asyncio.gather(
-                *[
-                    self._pool.send(
-                        bank, risk_scores, msg_id=f"Decryption {self.bank.name}"
-                    )
-                    for bank in self._pool.pool_handlers.keys()
-                ]
-            )
-        decrypted_risk_scores = {}
-        for key, risk_score in risk_scores.items():
-            decrypted_risk_scores[key] = await self._paillier.decrypt(
-                risk_score, receivers=[party]
+            msg_id = f"Decryption {self.bank.name}"
+            logger.debug(f"Sending message with id: {msg_id}")
+            await self._pool.broadcast(risk_scores, msg_id=msg_id)
+        decrypted_risk_scores: Dict[str, Union[Integral, float, FixedPoint, None]] = {}
+        risk_score_mapping = {}
+        risk_score_values = []
+        for index, (key, value) in enumerate(risk_scores.items()):
+            risk_score_mapping[key] = index
+            risk_score_values.append(value)
+
+        logger.info(f"Awaiting paillier decryption results for party: {party}")
+        decrypted_risk_score_list = await self._paillier.decrypt_sequence(
+            risk_score_values, receivers=[party]
+        )
+
+        for key in risk_scores.keys():
+            decrypted_risk_scores[key] = (
+                decrypted_risk_score_list[risk_score_mapping[key]]
+                if decrypted_risk_score_list is not None
+                else None
             )
         return decrypted_risk_scores
 
@@ -149,6 +165,9 @@ class Player:
 
         :param bank: the bank to update
         """
+        logger.debug(
+            f"Awaiting message from {bank.name} for risk scores of iteration {self._iteration}"
+        )
         risk_scores = await self._pool.recv(
             bank.name, msg_id=f"Iteration {self._iteration}"
         )
@@ -170,6 +189,10 @@ class Player:
         :param bank: the bank to send update to
         """
         risk_scores = self.bank.get_risk_scores(bank.external_accounts)
+
+        logger.debug(
+            f"Sending message to {bank.name} with {len(risk_scores)} risk scores of iteration {self._iteration}"
+        )
         await self._pool.send(
             bank.name, risk_scores, msg_id=f"Iteration {self._iteration}"
         )
@@ -186,7 +209,7 @@ class Player:
         self._decrypted_scores = {}
         for account, scaled_score in decrypted_scores.items():
             self._decrypted_scores[account] = scaled_score / (
-                self.COMPENSATION_FACTOR ** self._iteration
+                self.COMPENSATION_FACTOR**self._iteration
             )
 
     def encrypt_initial_risk_scores(self) -> None:

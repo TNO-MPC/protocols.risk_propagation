@@ -6,12 +6,15 @@ import asyncio
 import logging
 from typing import Tuple, cast
 
-import pandas as pd
+import numpy as np
+import numpy.typing as npt
 import pytest
+import pytest_asyncio
 
 from tno.mpc.communication import Pool
 from tno.mpc.communication.httphandlers import logger
 from tno.mpc.communication.test import (  # pylint: disable=unused-import
+    event_loop,
     fixture_pool_http_3p,
 )
 from tno.mpc.encryption_schemes.utils import FixedPoint
@@ -23,8 +26,7 @@ fxp = FixedPoint.fxp
 logger.setLevel(logging.WARNING)
 
 
-@pytest.fixture(name="distributed_schemes")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(name="distributed_schemes")
 async def fixture_distributed_schemes(
     pool_http_3p: Tuple[Pool, Pool, Pool]
 ) -> Tuple[DistributedPaillier, DistributedPaillier, DistributedPaillier]:
@@ -60,8 +62,7 @@ async def fixture_distributed_schemes(
     )
 
 
-@pytest.fixture(name="alice")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(name="alice")
 async def fixture_alice(
     pool_http_3p: Tuple[Pool, Pool, Pool],
     distributed_schemes: Tuple[
@@ -78,27 +79,38 @@ async def fixture_alice(
     alice = list(pool_http_3p[2].pool_handlers)[0]
     bob = list(pool_http_3p[2].pool_handlers)[1]
     charlie = list(pool_http_3p[0].pool_handlers)[1]
-    accounts_df = pd.DataFrame({"id": ["a", "b", "c"], "risk_score": [0.1, 0.9, 0.1]})
-    transactions_df = pd.DataFrame(
-        {
-            "id_source": ["b", "b", "d"],
-            "bank_source": [alice, alice, bob],
-            "id_destination": ["g", "a", "c"],
-            "bank_destination": [charlie, alice, alice],
-            "amount": [100, 100, 100],
-        }
+    account_datatype = np.dtype([("id", np.unicode_, 100), ("risk_score", np.float64)])
+    accounts_array: npt.NDArray[np.object_] = np.array(
+        [("a", 0.1), ("b", 0.9), ("c", 0.1)], dtype=account_datatype
     )
+    transaction_datatype = np.dtype(
+        [
+            ("id_source", np.unicode_, 100),
+            ("bank_source", np.unicode_, 100),
+            ("id_destination", np.unicode_, 100),
+            ("bank_destination", np.unicode_, 100),
+            ("amount", np.int32),
+        ]
+    )
+    transactions_array: npt.NDArray[np.object_] = np.array(
+        [
+            ("b", alice, "g", charlie, 100),
+            ("b", alice, "a", alice, 100),
+            ("d", bob, "c", alice, 100),
+        ],
+        dtype=transaction_datatype,
+    )
+
     return Player(
         name=alice,
-        accounts=accounts_df,
-        transactions=transactions_df,
+        accounts=accounts_array,
+        transactions=transactions_array,
         pool=pool_http_3p[0],
         paillier=distributed_schemes[0],
     )
 
 
-@pytest.fixture(name="bob")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(name="bob")
 async def fixture_bob(
     pool_http_3p: Tuple[Pool, Pool, Pool],
     distributed_schemes: Tuple[
@@ -115,27 +127,39 @@ async def fixture_bob(
     alice = list(pool_http_3p[2].pool_handlers)[0]
     bob = list(pool_http_3p[2].pool_handlers)[1]
     charlie = list(pool_http_3p[0].pool_handlers)[1]
-    accounts_df = pd.DataFrame({"id": ["d", "e", "f"], "risk_score": [0.7, 0.8, 0.0]})
-    transactions_df = pd.DataFrame(
-        {
-            "id_source": ["d", "e", "i", "d"],
-            "bank_source": [bob, bob, charlie, bob],
-            "id_destination": ["c", "g", "f", "g"],
-            "bank_destination": [alice, charlie, bob, charlie],
-            "amount": [100, 100, 100, 100],
-        }
+    account_datatype = np.dtype([("id", np.unicode_, 100), ("risk_score", np.float64)])
+    accounts_array: npt.NDArray[np.object_] = np.array(
+        [("d", 0.7), ("e", 0.8), ("f", 0.0)], dtype=account_datatype
     )
+    transaction_datatype = np.dtype(
+        [
+            ("id_source", np.unicode_, 100),
+            ("bank_source", np.unicode_, 100),
+            ("id_destination", np.unicode_, 100),
+            ("bank_destination", np.unicode_, 100),
+            ("amount", np.int32),
+        ]
+    )
+    transactions_array: npt.NDArray[np.object_] = np.array(
+        [
+            ("d", bob, "c", alice, 100),
+            ("e", bob, "g", charlie, 100),
+            ("i", charlie, "f", bob, 100),
+            ("d", bob, "g", charlie, 100),
+        ],
+        dtype=transaction_datatype,
+    )
+
     return Player(
         name=bob,
-        accounts=accounts_df,
-        transactions=transactions_df,
+        accounts=accounts_array,
+        transactions=transactions_array,
         pool=pool_http_3p[1],
         paillier=distributed_schemes[1],
     )
 
 
-@pytest.fixture(name="charlie")
-@pytest.mark.asyncio
+@pytest_asyncio.fixture(name="charlie")
 async def fixture_charlie(
     pool_http_3p: Tuple[Pool, Pool, Pool],
     distributed_schemes: Tuple[
@@ -152,28 +176,35 @@ async def fixture_charlie(
     alice = list(pool_http_3p[2].pool_handlers)[0]
     bob = list(pool_http_3p[2].pool_handlers)[1]
     charlie = list(pool_http_3p[0].pool_handlers)[1]
-    accounts_df = pd.DataFrame({"id": ["g", "h", "i"], "risk_score": [0.0, 0.0, 0.2]})
+    account_datatype = np.dtype([("id", np.unicode_, 100), ("risk_score", np.float64)])
+    account_array: npt.NDArray[np.object_] = np.array(
+        [("g", 0.0), ("h", 0.0), ("i", 0.2)], dtype=account_datatype
+    )
 
-    transactions_df = pd.DataFrame(
-        {
-            "id_source": ["e", "i", "d", "b", "h", "g"],
-            "bank_source": [bob, charlie, bob, alice, charlie, charlie],
-            "id_destination": ["g", "f", "g", "g", "i", "h"],
-            "bank_destination": [
-                charlie,
-                bob,
-                charlie,
-                charlie,
-                charlie,
-                charlie,
-            ],
-            "amount": [100, 100, 100, 100, 100, 100],
-        }
+    transaction_datatype = np.dtype(
+        [
+            ("id_source", np.unicode_, 100),
+            ("bank_source", np.unicode_, 100),
+            ("id_destination", np.unicode_, 100),
+            ("bank_destination", np.unicode_, 100),
+            ("amount", np.int32),
+        ]
+    )
+    transactions_array: npt.NDArray[np.object_] = np.array(
+        [
+            ("e", bob, "g", charlie, 100),
+            ("i", charlie, "f", bob, 100),
+            ("d", bob, "g", charlie, 100),
+            ("b", alice, "g", charlie, 100),
+            ("h", charlie, "i", charlie, 100),
+            ("g", charlie, "h", charlie, 100),
+        ],
+        dtype=transaction_datatype,
     )
     return Player(
         name=charlie,
-        accounts=accounts_df,
-        transactions=transactions_df,
+        accounts=account_array,
+        transactions=transactions_array,
         pool=pool_http_3p[2],
         paillier=distributed_schemes[2],
     )

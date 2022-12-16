@@ -10,7 +10,7 @@ The research activities that led to this protocol and implementation were funded
 
 ## Documentation
 
-Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.mpc.tno.nl/protocols/risk_propagation/0.1.8).
+Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.mpc.tno.nl/protocols/risk_propagation/1.0.7).
 
 ## Install
 
@@ -67,6 +67,29 @@ party gets to see the decrypted, propagated risk scores of his own bank accounts
 ## Usage
 
 The protocol is symmetric. For determining a secure set of parameters for the distributed keygen we refer to [protocols.distributed_keygen](https://github.com/TNO-MPC/protocols.distributed_keygen/#usage).
+
+### Input
+
+For the input two numpy arrays are expected. The structure and types are given in the tables below:
+
+Input of the accounts:
+
+| id     | risk_score |
+|--------|------------|
+| string | float 64   |
+
+
+Input of the transactions:
+
+| id_source | bank_source | id_destination | bank_destination | amount |
+|-----------|-------------|----------------|------------------|--------|
+| string    | string      | string         | string           | int32  |
+
+A string is expected to consist out of at most 100 unicode characters.
+
+For example data see the folder `example_data` in `tno/mpc/protocols/risk_propagation`.
+
+### Example usage
 
 >`example_usage.py`
 >```python

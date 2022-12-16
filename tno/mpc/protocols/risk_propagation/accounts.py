@@ -3,6 +3,7 @@ Configuration of a dictionary of bank accounts
 """
 from __future__ import annotations
 
+import logging
 from typing import (
     Dict,
     Generator,
@@ -14,13 +15,16 @@ from typing import (
     ValuesView,
 )
 
-import pandas as pd
+import numpy as np
+import numpy.typing as npt
 
 from tno.mpc.encryption_schemes.paillier import Paillier
 from tno.mpc.protocols.distributed_keygen import DistributedPaillier
 
 import tno.mpc.protocols.risk_propagation.bank  # to make sphinx find Bank correctly
 from .account import Account
+
+logger = logging.getLogger(__name__)
 
 
 class Accounts(MutableMapping[str, Account]):
@@ -37,7 +41,7 @@ class Accounts(MutableMapping[str, Account]):
         self._dict: Dict[str, Account] = (
             {account.label: account for account in accounts}
             if accounts is not None
-            else dict()
+            else {}
         )
 
     def __delitem__(self, key: str) -> None:
@@ -85,31 +89,34 @@ class Accounts(MutableMapping[str, Account]):
         return "\n".join(str(_) for _ in self.values())
 
     @classmethod
-    def from_dataframe(
+    def from_numpy_array(
         cls,
-        dataframe: pd.DataFrame,
+        array: npt.NDArray[np.object_],
         origin: tno.mpc.protocols.risk_propagation.bank.Bank,
         delta: float,
     ) -> Accounts:
         """
-        Class method to create an instance of account from a Pandas dataframe
+        Class method to create an instance of account from a numpy array
 
-        :param dataframe: the dataframe to use in the initialisation with columns "id" and "score"
+        :param array: the numpy array to use in the initialisation with columns "id" (at most 100 unicode characters)
+         and "risk_score" (np.float64)
         :param origin: the originating bank
         :param delta: the delta to initialise the accounts with
         :return: an Accounts instance
-        :raise ValueError: raised when provided dataframe does not contain the correct columns
+        :raise ValueError: raised when provided array does not contain the correct columns
         """
-        if not {"id", "risk_score"}.issubset(dataframe.columns):
-            raise ValueError(
-                "Could not find the right columns in the provided dataframe"
-            )
+        expected_dtype = np.dtype(
+            [("id", np.unicode_, 100), ("risk_score", np.float64)]
+        )
+        typed_array = np.rec.array(array, dtype=expected_dtype)
+
+        logger.info(f"Processing {typed_array.size} accounts")
         accounts = set()
-        for _, row in dataframe.iterrows():
+        for account in typed_array:
             accounts.add(
                 Account(
-                    label=row["id"],
-                    initial_risk_score=row["risk_score"],
+                    label=account.id.item(),
+                    initial_risk_score=account.risk_score.item(),
                     origin=origin,
                     delta=delta,
                 )
