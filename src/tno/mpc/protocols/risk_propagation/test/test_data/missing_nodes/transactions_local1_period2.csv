@@ -1,0 +1,14 @@
+id_source,bank_source,id_destination,bank_destination,amount
+0,local0,6,local1,19832
+2,local0,4,local1,52680
+4,local1,11,local2,21664
+4,local1,2,local0,66796
+5,local1,1,local0,29663
+6,local1,7,local1,42068
+6,local1,9,local2,87948
+7,local1,8,local2,55871
+8,local2,6,local1,56575
+8,local2,7,local1,71408
+10,local2,4,local1,88393
+10,local2,5,local1,67352
+10,local2,6,local1,36821

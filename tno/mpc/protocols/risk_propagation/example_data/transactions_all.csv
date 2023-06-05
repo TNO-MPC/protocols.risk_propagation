@@ -1,9 +1,0 @@
-id_source,bank_source,id_destination,bank_destination,amount
-5,B,7,C,100
-9,C,6,B,100
-4,B,7,C,100
-2,A,7,C,100
-8,C,9,C,100
-7,C,8,C,100
-4,B,3,A,100
-2,A,1,A,100

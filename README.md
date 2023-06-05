@@ -4,13 +4,13 @@ The TNO MPC lab consists of generic software components, procedures, and functio
 
 The package tno.mpc.protocols.risk_propagation is part of the TNO Python Toolbox.
 
-The research activities that led to this protocol and implementation were funded by ABN AMRO, Rabobank, PPS-surcharge for Research and Innovation of the Dutch Ministry of Economic Affairs and Climate Policy, and TNO's Appl.AI programme.
+The research activities that led to this protocol and implementation were supported by ABN AMRO, CWI, Rabobank, TMNL, De Volksbank and PPS-surcharge for Research and Innovation of the Dutch Ministry of Economic Affairs and Climate Policy, and TNO's Appl.AI programme.
 
 *Limitations in (end-)use: the content of this software package may solely be used for applications that comply with international export control laws.*
 
 ## Documentation
 
-Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.mpc.tno.nl/protocols/risk_propagation/1.0.7).
+Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.mpc.tno.nl/protocols/risk_propagation/2.1.0).
 
 ## Install
 
@@ -91,6 +91,8 @@ For example data see the folder `example_data` in `tno/mpc/protocols/risk_propag
 
 ### Example usage
 
+
+
 >`example_usage.py`
 >```python
 >"""
@@ -107,12 +109,13 @@ For example data see the folder `example_data` in `tno/mpc/protocols/risk_propag
 >from tno.mpc.protocols.distributed_keygen import DistributedPaillier
 >
 >from tno.mpc.protocols.risk_propagation import Player
+>from tno.mpc.protocols.risk_propagation.test.test_data.small import input_data
 >
 >"""
 >Default parameters for distributed keygen
 >"""
 >corruption_threshold = 1  # corruption threshold
->key_length = 256  # bit length of private key
+>key_length = 512  # bit length of private key
 >prime_thresh = 2000  # threshold for primality check
 >correct_param_biprime = 40  # correctness parameter for biprimality test
 >stat_sec_shamir = (
@@ -178,20 +181,14 @@ For example data see the folder `example_data` in `tno/mpc/protocols/risk_propag
 >        )  # default port=80
 >
 >    if player == "alice":
->        from tno.mpc.protocols.risk_propagation.example_data import nodes_A as nodes
->        from tno.mpc.protocols.risk_propagation.example_data import (
->            transactions_A as transactions,
->        )
+>        transactions = input_data["numpy_transactions_A"]
+>        nodes = input_data["numpy_nodes_A"]
 >    elif player == "bob":
->        from tno.mpc.protocols.risk_propagation.example_data import nodes_B as nodes
->        from tno.mpc.protocols.risk_propagation.example_data import (
->            transactions_B as transactions,
->        )
+>        transactions = input_data["numpy_transactions_B"]
+>        nodes = input_data["numpy_nodes_B"]
 >    elif player == "charlie":
->        from tno.mpc.protocols.risk_propagation.example_data import nodes_C as nodes
->        from tno.mpc.protocols.risk_propagation.example_data import (
->            transactions_C as transactions,
->        )
+>        transactions = input_data["numpy_transactions_C"]
+>        nodes = input_data["numpy_nodes_C"]
 >
 >    await main(player, pool, nodes, transactions, distributed)
 >

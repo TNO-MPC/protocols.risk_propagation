@@ -1,7 +1,0 @@
-id_source,bank_source,id_destination,bank_destination,amount
-e,bob,g,charlie,100
-i,charlie,f,bob,100
-d,bob,g,charlie,100
-b,alice,g,charlie,100
-h,charlie,i,charlie,100
-g,charlie,h,charlie,100

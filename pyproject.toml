@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tno.mpc.protocols.risk_propagation"
+description = "Secure risk propagation using distributed Paillier"
+readme = "README.md"
+authors = [{name = "TNO MPC Lab", email = "mpclab@tno.nl"}]
+maintainers = [{name = "TNO MPC Lab", email = "mpclab@tno.nl"}]
+keywords = [
+    "TNO",
+    "MPC",
+    "multi-party computation",
+    "protocols",
+    "risk propagation",
+]
+license = {text = "Apache License, Version 2.0"}
+classifiers = [
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "Typing :: Typed",
+    "Topic :: Security :: Cryptography",
+]
+urls = {Homepage = "https://mpc.tno.nl/", Documentation = "https://docs.mpc.tno.nl/protocols/risk_propagation/2.1.0", Source = "https://github.com/TNO-MPC/protocols.risk_propagation"}
+dynamic = ["version"]
+requires-python = ">=3.7"
+dependencies = [
+    "numpy",
+    "tno.mpc.communication>=3.3,<5.0",
+    "tno.mpc.encryption_schemes.paillier", # version is constrainted by tno.mpc.protocols.distributed_keygen
+    "tno.mpc.protocols.distributed_keygen~=4.0",
+]
+
+[project.optional-dependencies]
+gmpy = [
+    "tno.mpc.encryption_schemes.paillier[gmpy]",
+    "tno.mpc.protocols.distributed_keygen[gmpy]",
+]
+tests = [
+    "numpy>=1.21",
+    "pandas",
+    "pandas-stubs",
+    "pytest",
+    "pytest-asyncio",
+    "tno.mpc.communication",
+    "typing_extensions~=4.0; python_version<'3.8'",
+]
+
+[tool.setuptools]
+platforms = ["any"]
+
+[tool.setuptools.dynamic]
+version = {attr = "tno.mpc.protocols.risk_propagation.__version__"}
+
+[tool.setuptools.package-data]
+"*" = ["py.typed"]
+"tno.mpc.protocols.risk_propagation" = ["test/test_data/*.csv"]
+
