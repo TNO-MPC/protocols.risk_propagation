@@ -1,20 +1,24 @@
 """
 Configuration of a bank
 """
+from __future__ import annotations
+
 import asyncio
 import logging
 from numbers import Integral
-from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Tuple, Union
+from pathlib import Path
+from typing import TYPE_CHECKING, Callable
 
 import numpy as np
 import numpy.typing as npt
 
-from tno.mpc.communication import Pool
+from tno.mpc.communication import Pool, Serialization
 from tno.mpc.encryption_schemes.paillier import PaillierCiphertext
 from tno.mpc.encryption_schemes.utils import FixedPoint
 from tno.mpc.protocols.distributed_keygen import DistributedPaillier
 
 from .bank import Bank
+from .exceptions import IncorrectStartException, WrongDeserializationException
 
 if TYPE_CHECKING:
     from .account import (  # prevent cyclic dependency, but do get typing information
@@ -38,10 +42,11 @@ class Player:
         self,
         name: str,
         accounts: npt.NDArray[np.object_],
-        transactions: Union[npt.NDArray[np.object_], List[npt.NDArray[np.object_]]],
+        transactions: npt.NDArray[np.object_] | list[npt.NDArray[np.object_]],
         pool: Pool,
         paillier: DistributedPaillier,
         delta_func: Callable[[int], float] = lambda _: 0.5,
+        intermediate_results_path: Path | None = None,
     ):
         """
         Initializes a player instance
@@ -52,8 +57,11 @@ class Player:
         :param pool: the communication pool to use
         :param paillier: an instance of DistributedPaillier
         :param delta_func: Callable function which uses the iteration index to determine the delta value (must be between [0 and 1)).
+        :param intermediate_results_path: the path to the folder where the intermediate results should be stored. If no path is provided, intermediate results are not stored.
         """
+        self._total_iterations = 0
         self.name = name
+        self._period = 0
         self._iteration = 0
         self._pool = pool
         self._paillier: DistributedPaillier = paillier
@@ -62,12 +70,16 @@ class Player:
         self._n_periods = len(transactions)
         self.bank: Bank = Bank(name, n_periods=self._n_periods)
         self._delta_func = delta_func
-        self._other_banks: Tuple[Bank, ...] = tuple(
+        self._started_from_intermediate_result = False
+        self._intermediate_results: list[bytes] = []
+        self._store_intermediate_results = intermediate_results_path is not None
+        self._results_path = intermediate_results_path
+        self._other_banks: tuple[Bank, ...] = tuple(
             Bank(name, n_periods=self._n_periods)
             for name in self._pool.pool_handlers.keys()
         )
 
-        self._decrypted_scores: Optional[Dict[str, FixedPoint]] = None
+        self._decrypted_scores: dict[str, FixedPoint] | None = None
         self.bank.process_accounts(accounts)
 
         for bank in self.banks:
@@ -75,7 +87,7 @@ class Player:
             bank.process_transactions(transactions)
 
     @property
-    def banks(self) -> Tuple[Bank, ...]:
+    def banks(self) -> tuple[Bank, ...]:
         """
         All banks in the protocol
 
@@ -84,7 +96,7 @@ class Player:
         return (self.bank,) + self.other_banks
 
     @property
-    def other_banks(self) -> Tuple[Bank, ...]:
+    def other_banks(self) -> tuple[Bank, ...]:
         """
         The other banks in the protocol
 
@@ -93,7 +105,7 @@ class Player:
         return self._other_banks
 
     @property
-    def risk_scores(self) -> Dict[str, FixedPoint]:
+    def risk_scores(self) -> dict[str, FixedPoint]:
         """
         The plaintext risk scores belonging to this player's bank
 
@@ -103,6 +115,18 @@ class Player:
         if self._decrypted_scores is None:
             raise AttributeError("Risk scores haven't been decrypted (yet)")
         return self._decrypted_scores
+
+    @property
+    def intermediate_results(self) -> list[bytes]:
+        """
+        List of bytes objects of all the intermediate states for this player.
+
+        :return: list of bytes objects.
+        :raise AttributeError: raised when there are no intermediate states to return.
+        """
+        if len(self._intermediate_results) == 0:
+            raise AttributeError("No intermediate results have been stored (yet)")
+        return self._intermediate_results
 
     @property
     def delta(self) -> float:
@@ -118,6 +142,18 @@ class Player:
         ), f"The delta function provided was not in the range [0..1) for iteration {self._iteration}"
         return delta
 
+    @property
+    def results_path(self) -> Path:
+        """
+        The path object where the intermediate results are stored.
+
+        :return: Path object where the results are stored.
+        :raise AttributeError: raised when the results path is not configured for this party.
+        """
+        if self._results_path is None:
+            raise AttributeError("No results path was configured for this player")
+        return self._results_path
+
     def set_current_period(self, period_z: int) -> None:
         """
         Set the period z to be used in the next iteration(s)
@@ -127,13 +163,13 @@ class Player:
         for bank in self.banks:
             bank.set_current_period(period_z)
 
-    def _compute_new_risk_scores(self) -> Dict[str, PaillierCiphertext]:
+    def _compute_new_risk_scores(self) -> dict[str, PaillierCiphertext]:
         """
         Computes new risk scores
 
         :return: dictionary containing new risk scores
         """
-        updated_scores: Dict[str, PaillierCiphertext] = {}
+        updated_scores: dict[str, PaillierCiphertext] = {}
         scaled_delta_diff = int(self.COMPENSATION_FACTOR * (1 - self.delta))
         for account_name, account in self.bank.accounts_dict.items():
             updated_scores[account_name] = (
@@ -156,8 +192,8 @@ class Player:
         return updated_scores
 
     def _get_account_scores_and_total_income(
-        self, account: "Account"
-    ) -> Tuple[Dict[str, PaillierCiphertext], int]:
+        self, account: Account
+    ) -> tuple[dict[str, PaillierCiphertext], int]:
         """
         Retrieve the risk scores of linked accounts. Accounts that do not have a risk score are not returned.
         The total income for the `account` is adjusted to be the total of all linked accounts with a known risk score.
@@ -188,7 +224,7 @@ class Player:
 
     async def _decrypt_bank(
         self, party: str
-    ) -> Dict[str, Union[Integral, float, FixedPoint, None]]:
+    ) -> dict[str, Integral | float | FixedPoint | None]:
         """
         Decrypts the risk scores of party and reveals them to party
 
@@ -208,7 +244,7 @@ class Player:
                 if not risk_score.fresh:
                     risk_score.randomize()
             await self._pool.broadcast(risk_scores, msg_id=msg_id)
-        decrypted_risk_scores: Dict[str, Union[Integral, float, FixedPoint, None]] = {}
+        decrypted_risk_scores: dict[str, Integral | float | FixedPoint | None] = {}
         risk_score_mapping = {}
         risk_score_values = []
         for index, (key, value) in enumerate(risk_scores.items()):
@@ -243,10 +279,10 @@ class Player:
         :param bank: the bank to update
         """
         logger.debug(
-            f"Awaiting message from {bank.name} for risk scores of iteration {self._iteration}"
+            f"Awaiting message from {bank.name} for risk scores of period {self._period}, iteration {self._iteration}"
         )
         risk_scores = await self._pool.recv(
-            bank.name, msg_id=f"Iteration {self._iteration}"
+            bank.name, msg_id=f"Period {self._period},Iteration {self._iteration}"
         )
         for label, risk_score in risk_scores.items():
             self.bank.set_risk_score(label, risk_score, external=True)
@@ -255,32 +291,48 @@ class Player:
         """
         Sends updated risk scores to other banks
         """
-        # Find the accounts of our bank that are relevant, i.e. associated to
+        # Find the accounts of our bank that have an outgoing transaction to another bank, i.e. associated to
         # an account of another bank via a transaction
-        all_relevant_accounts = set()
+        all_external_accounts = set()
         for bank in self.other_banks:
-            all_relevant_accounts.update(bank.external_accounts)
+            all_external_accounts.update(bank.external_accounts)
 
+        await self.randomize_and_send_updated_risk_scores(all_external_accounts)
+
+    async def randomize_and_send_updated_risk_scores(
+        self, all_external_accounts: set[str]
+    ) -> None:
+        """
+        Send updated risk score to the other banks. While ensuring that the ciphertexts are
+        randomized only once when it is sent.
+
+        A workaround is used to send randomized ciphertexts to each party. The randomization is done
+        once for all parties. In other words all ciphertexts are refreshed if needed at the start
+        of this method, but after that they are not rerandomized (which would happen without this
+        workaround). Rerandomization would happen, since the communication module marks a ciphertext
+        as unfresh when it is sent.
+
+        This is a feature when sending randomizable ciphertext to multiple parties over multiple
+        messages.
+
+        Example:
+            Let ciphertext `x` be a fresh ciphertext being sent to two parties `A` and `B`. First
+            `x` is sent to party `A`. The communication module now sets `x` as unfresh. The
+            workaround marks `x` as fresh without randomizing. Now `x` can be sent to party `B`.
+
+        :param all_external_accounts: All account ids, where the account has a transaction to another bank.
+        """
         # Randomize the relevant risk scores
-        count = 0
-        for risk_score in self.bank.get_risk_scores(all_relevant_accounts).values():
+        for risk_score in self.bank.get_risk_scores(all_external_accounts).values():
             if not risk_score.fresh:
-                count += 1
                 risk_score.randomize()
 
         for bank in self.other_banks:
-            # FIXME:
-            # The communication module marks a ciphertext as unfresh once it is sent.
-            # This breaks, when sending the same ciphertext to multiple parties in seperate send calls.
-            # Therefore, we hack the ciphertext to fresh before sending it to the next party, as we know we have just randomized it.
-            # If we don't do this, the ciphertext will be randomized again, which wastes resources.
-            # https://ci.tno.nl/gitlab/pet/lab/mpc/python-packages/microlibs/communication/-/issues/75#note_511679
-            for risk_score in self.bank.get_risk_scores(all_relevant_accounts).values():
+            for risk_score in self.bank.get_risk_scores(all_external_accounts).values():
                 risk_score._fresh = True
-
             await self._send_updated_risk_scores(bank)
 
-        for risk_score in self.bank.get_risk_scores(all_relevant_accounts).values():
+        for risk_score in self.bank.get_risk_scores(all_external_accounts).values():
             risk_score._fresh = False
 
     async def _send_updated_risk_scores(self, bank: Bank) -> None:
@@ -292,10 +344,12 @@ class Player:
         risk_scores = self.bank.get_risk_scores(bank.external_accounts)
 
         logger.debug(
-            f"Sending message to {bank.name} with {len(risk_scores)} risk scores of iteration {self._iteration}"
+            f"Sending message to {bank.name} with {len(risk_scores)} risk scores of period {self._period}, iteration {self._iteration}"
         )
         await self._pool.send(
-            bank.name, risk_scores, msg_id=f"Iteration {self._iteration}"
+            bank.name,
+            risk_scores,
+            msg_id=f"Period {self._period},Iteration {self._iteration}",
         )
 
     async def decrypt(self) -> None:
@@ -310,7 +364,7 @@ class Player:
         self._decrypted_scores = {}
         for account, scaled_score in decrypted_scores.items():
             self._decrypted_scores[account] = scaled_score / (
-                self.COMPENSATION_FACTOR**self._iteration
+                self.COMPENSATION_FACTOR**self._total_iterations
             )
 
     def encrypt_initial_risk_scores(self) -> None:
@@ -318,6 +372,115 @@ class Player:
         Encrypt the initialised risk scores of this player's accounts
         """
         self.bank.encrypt(self._paillier)
+
+    def serialize_current_risk_scores(
+        self, current_z: int, current_iteration: int
+    ) -> bytes:
+        """
+        Serialize the risk scores of all accounts of this player.
+
+        :param current_z: The current period z.
+        :param current_iteration: The current iteration.
+        :return: Bytes storing the risk scores, the current public key, the current period z and the current iteration.
+        """
+
+        risk_scores = {k: v._raw_value for k, v in self.bank.get_risk_scores().items()}
+        serialized_risk_scores = {
+            "risk_scores": risk_scores,
+            "public_key": self._paillier.public_key,
+            "current_z": current_z,
+            "current_iteration": current_iteration,
+        }
+
+        packed_risk_scores = Serialization.pack(
+            serialized_risk_scores,
+            msg_id=f"p{current_z}i{current_iteration}",
+            use_pickle=False,
+        )
+
+        return packed_risk_scores
+
+    def deserialize_risk_scores(
+        self, bytes_object: bytes
+    ) -> tuple[dict[str, PaillierCiphertext], int, int]:
+        """
+        Deserialize the risk scores stored at a given location.
+
+        :param bytes_object: The bytes from which the risk scores should be deserialized.
+        :return: Tuple consisting of a dictionary with accounts and risk scores, the period and the iteration in which the loaded risk scores were stored.
+        :raise WrongDeserializationException: Raised when the public key of the loaded risk scores or the accounts of the loaded risk scores does not match the current context.
+        """
+
+        _, state = Serialization.unpack(bytes_object)
+        loaded_public_key = state["public_key"]
+
+        if not self._paillier.public_key == loaded_public_key:
+            raise WrongDeserializationException(
+                "Paillier public key of loaded ciphertexts does not match the public key currently in use"
+            )
+
+        loaded_risk_scores = state["risk_scores"]
+
+        if not self.bank.accounts_dict.keys() == loaded_risk_scores.keys():
+            raise WrongDeserializationException(
+                "Loaded account keys do not match account keys currently in use"
+            )
+
+        formatted_risk_scores: dict[str, PaillierCiphertext] = {}
+        for account, score in loaded_risk_scores.items():
+            formatted_risk_scores[str(account)] = PaillierCiphertext(
+                Serialization.deserialize(score), self._paillier
+            )
+
+        return formatted_risk_scores, state["current_z"], state["current_iteration"]
+
+    def intermediate_results_to_disk(
+        self, bytes_object: bytes, current_period: int, current_iteration: int
+    ) -> None:
+        """
+        Write the intermediate results to disk.
+
+        :param bytes_object: Bytes representing the current state.
+        :param current_period: The current period.
+        :param current_iteration: The current iteration.
+        """
+
+        with open(
+            self.results_path
+            / f"{self.name}_results_period_{current_period}_iteration_{current_iteration}.rp",
+            "wb",
+        ) as file_path:
+            file_path.write(bytes_object)
+
+    def intermediate_results_from_disk(self, path: Path) -> bytes:
+        """
+        Read intermediate results from disk.
+
+        :param path: The path from which the intermediate results should be loaded from disk.
+        :return: Bytes containing the intermediate results
+        """
+        with open(path, "rb") as data_file:
+            bytes_object = data_file.read()
+        return bytes_object
+
+    async def continue_from_stored_results(
+        self, iterations: int, intermediate_results: bytes
+    ) -> None:
+        """
+        Resume the protocol from a stored state.
+
+        :param iterations: the number of iterations to perform in each period.
+        :param intermediate_results: the bytes containing the intermediate results to start from.
+        """
+
+        loaded_risk_scores, period_z, iteration = self.deserialize_risk_scores(
+            intermediate_results
+        )
+
+        for account_name, risk_score in loaded_risk_scores.items():
+            self.bank.set_risk_score(account_name, risk_score)
+        self._started_from_intermediate_result = True
+        await self.run_protocol(iterations, period_z, iteration + 1)
 
     async def iteration(self) -> None:
         """
@@ -332,42 +495,74 @@ class Player:
         loop = asyncio.get_event_loop()
         await loop.run_in_executor(None, self.update_risk_scores)
         self._iteration += 1
+        self._total_iterations += 1
 
-    async def run_protocol(self, iterations: int) -> None:
+    async def run_protocol(
+        self, iterations: int, starting_period: int = 0, starting_iteration: int = 0
+    ) -> None:
         """
         Runs the entire protocol
 
-        :param iterations: the number of iterations to perform
+        :param iterations: the number of iterations to perform in each period
+        :param starting_period: the first period that should be run. This is only relevant if the protocol is restarted from intermediate resuls.
+        :param starting_iteration: the first iteration that should be performed. This is only relevant if the protocol is restarted from intermediate results.
+        :raises IncorrectStartException: Raised if the protocol is incorrectly started.
         """
+
+        if (
+            starting_period > 0 or starting_iteration > 0
+        ) and not self._started_from_intermediate_result:
+            raise IncorrectStartException(
+                "Starting period or  starting iteration is set but protocol is not reinstantiated from intermediate state"
+            )
+
         self._paillier.boot_randomness_generation(
-            self._calc_required_randomness(iterations)
+            self._calc_required_randomness(
+                iterations, starting_period, starting_iteration
+            )
         )
 
         loop = asyncio.get_event_loop()
-        await loop.run_in_executor(None, self.encrypt_initial_risk_scores)
-        for period_z in range(self._n_periods):
-            self.set_current_period(period_z)
-            for _ in range(iterations):
-                await self.iteration()
-        await self.decrypt()
+        if starting_period > 0 or starting_iteration > 0:
+            self._total_iterations = starting_period * iterations + starting_iteration
+            self._iteration = starting_iteration
+        else:
+            await loop.run_in_executor(None, self.encrypt_initial_risk_scores)
 
+        for period_z in range(starting_period, self._n_periods):
+            self.set_current_period(period_z)
+            self._iteration = 0
+            for iteration in range(starting_iteration, iterations):
+                await self.iteration()
+                state_bytes = self.serialize_current_risk_scores(period_z, iteration)
+                self._intermediate_results.append(state_bytes)
+                if self._store_intermediate_results:
+                    self.intermediate_results_to_disk(state_bytes, period_z, iteration)
+            starting_iteration = 0
+
+        await self.decrypt()
         self._paillier.shut_down()
 
-    def _calc_required_randomness(self, iterations: int) -> int:
+    def _calc_required_randomness(
+        self, iterations: int, starting_period: int, starting_iteration: int
+    ) -> int:
         """
         Calculate the required amount of fresh randomness to run the
         protocol as this play for the given number of iterations.
 
         :param iterations: The number of iterations that the risk propagation
             will be performed per period.
+        :param starting_period: The first period that should be run (only applicable if algorithm is reinstantiated from intermediate state)
+        :param starting_iteration: The first iteration that should be run (only applicable if algorithm is reinstantiated from intermediate state)
         :return: The amount of randomness that is required to run the protocol
             for the given number of iterations.
         """
         required_randomness = 0
 
+        n_iterations = iterations - starting_iteration
         # For each period, the set of neighboring nodes changes, and thus we
         # need to recalculate how many risk_scores we must send in that period for each iteration.
-        for period_z in range(self._n_periods):
+        for period_z in range(starting_period, self._n_periods):
             relevant_accounts = set()
 
             # Only those accounts that are involved in transactions with the other banks need to be sent
@@ -381,7 +576,8 @@ class Player:
                 }
                 relevant_accounts.update(bank_external_accounts)
 
-            required_randomness += len(relevant_accounts) * iterations
+            required_randomness += len(relevant_accounts) * n_iterations
+            n_iterations = iterations
 
         # For decryption, we also need a fresh randomness for each risk score
         # we own, i.e. for each of our accounts.

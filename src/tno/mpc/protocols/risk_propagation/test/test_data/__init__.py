@@ -1,22 +1,17 @@
 """
 Module containing test data for usage in the tests.
 """
+from __future__ import annotations
 
 import csv
 import os
-import sys
-from typing import Dict, List, Tuple
+from typing import TypedDict
 
 import numpy as np
 import numpy.typing as npt
 
 from tno.mpc.protocols.risk_propagation.accounts import nodes_expected_dtype
 from tno.mpc.protocols.risk_propagation.bank import transactions_expected_dtype
-
-if sys.version_info < (3, 8):
-    from typing_extensions import TypedDict
-else:
-    from typing import TypedDict
 
 
 class InputData(TypedDict):
@@ -28,12 +23,12 @@ class InputData(TypedDict):
     numpy_nodes_A: npt.NDArray[np.object_]
     numpy_nodes_B: npt.NDArray[np.object_]
     numpy_nodes_C: npt.NDArray[np.object_]
-    numpy_transactions_A: List[npt.NDArray[np.object_]]
-    numpy_transactions_B: List[npt.NDArray[np.object_]]
-    numpy_transactions_C: List[npt.NDArray[np.object_]]
-    nodes_dict: Dict[str, float]
-    transactions_dict: List[Dict[str, Dict[str, int]]]
-    transaction_totals_dict: List[Dict[str, int]]
+    numpy_transactions_A: list[npt.NDArray[np.object_]]
+    numpy_transactions_B: list[npt.NDArray[np.object_]]
+    numpy_transactions_C: list[npt.NDArray[np.object_]]
+    nodes_dict: dict[str, float]
+    transactions_dict: list[dict[str, dict[str, int]]]
+    transaction_totals_dict: list[dict[str, int]]
 
 
 def load_nodes_numpy(file_path: str) -> npt.NDArray[np.object_]:
@@ -72,7 +67,7 @@ def load_transactions_of_period_numpy(file_path: str) -> npt.NDArray[np.object_]
 
 def load_all_transactions_numpy(
     directory: str, bank_name: str, periods: int
-) -> List[npt.NDArray[np.object_]]:
+) -> list[npt.NDArray[np.object_]]:
     """
     Load the transactions of period 0 till period `periods` for the specified
     bank. The files loaded must be in the directory and of the form
@@ -96,7 +91,7 @@ def load_all_transactions_numpy(
     return result
 
 
-def read_nodes_risk_score_dict(file_path: str) -> Dict[str, float]:
+def read_nodes_risk_score_dict(file_path: str) -> dict[str, float]:
     """
     Read node id and risk score from the file to a dictionary.
     The file must contain a header and be of the form `id,risk_score`.
@@ -112,7 +107,7 @@ def read_nodes_risk_score_dict(file_path: str) -> Dict[str, float]:
         return {row[0]: float(row[1]) for row in csv_reader}
 
 
-def load_transactions_dict(file_path: str) -> Dict[str, Dict[str, int]]:
+def load_transactions_dict(file_path: str) -> dict[str, dict[str, int]]:
     """
     Read the transactions of the file to a dictionary. The file must contain a
     header. A transaction consists of
@@ -129,7 +124,7 @@ def load_transactions_dict(file_path: str) -> Dict[str, Dict[str, int]]:
         csv_reader = csv.reader(csv_file)
         # skip the header line
         next(csv_reader)
-        result: Dict[str, Dict[str, int]] = {}
+        result: dict[str, dict[str, int]] = {}
         for row in csv_reader:
             if row[1] not in result:
                 result[row[1]] = {row[0]: int(row[2])}
@@ -140,7 +135,7 @@ def load_transactions_dict(file_path: str) -> Dict[str, Dict[str, int]]:
 
 def load_all_transactions_dict(
     directory: str, periods: int
-) -> List[Dict[str, Dict[str, int]]]:
+) -> list[dict[str, dict[str, int]]]:
     """
     Load the transactions of period 0 till period `periods` bank. The files
     loaded must be in the directory and of the form `transactions_all_period{period}.csv`.
@@ -161,7 +156,7 @@ def load_all_transactions_dict(
 
 
 def load_files(
-    directory: str, bank_names: Tuple[str, str, str], periods: int
+    directory: str, bank_names: tuple[str, str, str], periods: int
 ) -> InputData:
     """
     Load all the transactions and node information in formats used by

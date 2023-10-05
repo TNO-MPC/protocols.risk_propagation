@@ -1,8 +1,9 @@
 """
 Configuration of a bank
 """
+from __future__ import annotations
+
 import logging
-from typing import Dict, List, Optional, Set, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -37,7 +38,7 @@ class Bank:
     def __init__(
         self,
         name: str,
-        transactions: Optional[List[npt.NDArray[np.object_]]] = None,
+        transactions: list[npt.NDArray[np.object_]] | None = None,
         n_periods: int = 1,
     ) -> None:
         """
@@ -62,7 +63,7 @@ class Bank:
         return f"Bank: {self.name}"
 
     @property
-    def accounts(self) -> Set[str]:
+    def accounts(self) -> set[str]:
         """
         The collection of account labels of this bank
 
@@ -89,7 +90,7 @@ class Bank:
         return self._accounts
 
     @property
-    def external_accounts(self) -> Set[str]:
+    def external_accounts(self) -> set[str]:
         """
         The collection of external accounts, i.e. accounts of this bank that
         are involved in a transaction with an account from another bank.
@@ -110,7 +111,7 @@ class Bank:
         return self._name
 
     @property
-    def risk_scores(self) -> Dict[str, PaillierCiphertext]:
+    def risk_scores(self) -> dict[str, PaillierCiphertext]:
         """
         A dictionary of risk scores per account of this bank. If the account has a risk score.
 
@@ -120,7 +121,7 @@ class Bank:
         imported_scores = self.get_imported_risk_scores()
         return {**scores, **imported_scores}
 
-    def encrypt(self, public_key: Union[DistributedPaillier, Paillier]) -> None:
+    def encrypt(self, public_key: DistributedPaillier | Paillier) -> None:
         """
         Encrypts risk scores of all accounts of this bank
 
@@ -129,8 +130,8 @@ class Bank:
         self._accounts.encrypt(public_key)
 
     def get_imported_risk_scores(
-        self, account_keys: Optional[Set[str]] = None
-    ) -> Dict[str, PaillierCiphertext]:
+        self, account_keys: set[str] | None = None
+    ) -> dict[str, PaillierCiphertext]:
         """
         Gets the encrypted risk scores of the imported accounts. If the account has no encrypted risk score no entry is added.
 
@@ -145,8 +146,8 @@ class Bank:
         }
 
     def get_risk_scores(
-        self, account_keys: Optional[Set[str]] = None
-    ) -> Dict[str, PaillierCiphertext]:
+        self, account_keys: set[str] | None = None
+    ) -> dict[str, PaillierCiphertext]:
         """
         Gets the accounts risk scores
 
@@ -180,7 +181,7 @@ class Bank:
             array, origin=self, periods=self._n_periods
         )
 
-    def process_transactions(self, array: List[npt.NDArray[np.object_]]) -> None:
+    def process_transactions(self, array: list[npt.NDArray[np.object_]]) -> None:
         """
         Processes the transaction array
 
@@ -205,7 +206,7 @@ class Bank:
             amount: int,
             origin_bank: str,
             destination_bank: str,
-            accounts: Set[str],
+            accounts: set[str],
             period: int,
         ) -> None:
             """

@@ -1,17 +1,18 @@
 """
 Script which can be used to generate new test data for the comparison between plaintext and secure risk propagation.
 """
+from __future__ import annotations
 
 import os
 import random as random
-from typing import Callable, Dict, List, Tuple
+from typing import Callable
 
 import networkx as ntw  # type: ignore
 
 
 def split_edges_over_nodes(
-    number_of_nodes: int, banks: List[List[int]], edges: Dict[Tuple[int, int], int]
-) -> List[List[Tuple[int, str, int, str, int]]]:
+    number_of_nodes: int, banks: list[list[int]], edges: dict[tuple[int, int], int]
+) -> list[list[tuple[int, str, int, str, int]]]:
     """
     Split the transaction edges over the banks. Each bank will receive a list of
     transactions, which are visible to them.
@@ -57,7 +58,7 @@ def split_edges_over_nodes(
 
 
 def write_transactions_per_bank(
-    transactions_per_bank: List[List[Tuple[int, str, int, str, int]]],
+    transactions_per_bank: list[list[tuple[int, str, int, str, int]]],
     file_name_generator: Callable[[int], str],
 ) -> None:
     """
@@ -80,7 +81,7 @@ def write_transactions_per_bank(
 
 
 def write_all_transactions(
-    transactions: Dict[Tuple[int, int], int], file_name: str
+    transactions: dict[tuple[int, int], int], file_name: str
 ) -> None:
     """
     Write all transactions to a single csv of the format\
@@ -97,8 +98,8 @@ def write_all_transactions(
 
 
 def write_bank_node_risk_scores(
-    banks: List[List[int]],
-    risk_scores: Dict[int, float],
+    banks: list[list[int]],
+    risk_scores: dict[int, float],
     file_name_generator: Callable[[int], str],
 ) -> None:
     """

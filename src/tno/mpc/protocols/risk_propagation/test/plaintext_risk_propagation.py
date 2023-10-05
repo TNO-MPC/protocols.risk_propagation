@@ -10,9 +10,10 @@ Preprocessing should be done in the following way:
     Ultimately, this should be represented as a dictionary that maps each node in period Z to a dictionary with as keys the other nodes that made a transaction to this node and as value the (aggregated) amount transferred from that node. Put the dictionaries for all Z's (for example 4) into a list in the order of the Z's "dics_transactions".
 5.  For each period Z, compute for each node in the transaction network from step 4 the total amount of money received by this node and put it in a dictionary mapping the node to the total amount received. Put these in a list "dics_total" that matches the order of the Z's and the order of the list resulting from step 4.
 """
+from __future__ import annotations
 
 import copy
-from typing import Callable, Dict, List, Tuple
+from typing import Callable
 
 import pandas as pd
 
@@ -30,12 +31,12 @@ def compute_delta(iteration: int, a_val: float = 0.5, b_val: float = 0.5) -> flo
 
 
 def risk_propagation(
-    dic_risk_scores: Dict[str, float],
-    dics_transactions: List[Dict[str, Dict[str, int]]],
-    dics_total: List[Dict[str, int]],
+    dic_risk_scores: dict[str, float],
+    dics_transactions: list[dict[str, dict[str, int]]],
+    dics_total: list[dict[str, int]],
     delta_func: Callable[[int], float],
     nr_iter: int = 2,
-) -> Tuple[Dict[str, float], pd.DataFrame]:
+) -> tuple[dict[str, float], pd.DataFrame]:
     """
     The main risk propagation function. Given the three dictionaries output by the preprocessing, perform a number of
     iterations of the risk propagation algorithms. Store intermediate results in a pandas dataframe (at each node,
@@ -75,11 +76,11 @@ def risk_propagation(
 
 
 def do_iteration(
-    dic_risk_scores: Dict[str, float],
-    dic_transactions: Dict[str, Dict[str, int]],
-    dic_total: Dict[str, int],
+    dic_risk_scores: dict[str, float],
+    dic_transactions: dict[str, dict[str, int]],
+    dic_total: dict[str, int],
     delta: float,
-) -> Dict[str, float]:
+) -> dict[str, float]:
     """
     Perform one iteration of the risk propagation algorithm. Computes, for every node, the new risk scores given the transaction network and the risk scores of the neighbors.
 

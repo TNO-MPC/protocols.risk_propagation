@@ -1,6 +1,6 @@
-# TNO MPC Lab - Protocols - Secure Risk Propagation
+# TNO PET Lab - secure Multi-Party Computation (MPC) - Protocols - Secure Risk Propagation
 
-The TNO MPC lab consists of generic software components, procedures, and functionalities developed and maintained on a regular basis to facilitate and aid in the development of MPC solutions. The lab is a cross-project initiative allowing us to integrate and reuse previously developed MPC functionalities to boost the development of new protocols and solutions.
+The TNO PET Lab consists of generic software components, procedures, and functionalities developed and maintained on a regular basis to facilitate and aid in the development of PET solutions. The lab is a cross-project initiative allowing us to integrate and reuse previously developed PET functionalities to boost the development of new protocols and solutions.
 
 The package tno.mpc.protocols.risk_propagation is part of the TNO Python Toolbox.
 
@@ -10,7 +10,7 @@ The research activities that led to this protocol and implementation were suppor
 
 ## Documentation
 
-Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.mpc.tno.nl/protocols/risk_propagation/2.1.0).
+Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.2.0).
 
 ## Install
 

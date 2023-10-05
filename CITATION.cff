@@ -2,22 +2,22 @@ cff-version: 1.2.0
 license: Apache-2.0
 message: If you use this software, please cite it using these metadata.
 authors:
-      - name: TNO MPC Lab
+      - name: TNO PET Lab
         city: The Hague
         country: NL
-        email: mpclab@tno.nl
-        website: https://mpc.tno.nl
+        email: petlab@tno.nl
+        website: https://pet.tno.nl
 type: software
-url: https://mpc.tno.nl
+url: https://pet.tno.nl
 contact:
-      - name: TNO MPC Lab
+      - name: TNO PET Lab
         city: The Hague
         country: NL
-        email: mpclab@tno.nl
-        website: https://mpc.tno.nl
+        email: petlab@tno.nl
+        website: https://pet.tno.nl
 repository-code: https://github.com/TNO-MPC/protocols.risk_propagation
 repository-artifact: https://pypi.org/project/tno.mpc.protocols.risk_propagation
-title: TNO MPC Lab - Protocols - Secure Risk Propagation
-version: v2.1.0
-date-released: 2023-06-05
+title: TNO PET Lab - secure Multi-Party Computation (MPC) - Protocols - Secure Risk Propagation
+version: v2.2.0
+date-released: 2023-10-05
 
