@@ -10,7 +10,7 @@ The research activities that led to this protocol and implementation were suppor
 
 ## Documentation
 
-Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.2.0).
+Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.2.1).
 
 ## Install
 

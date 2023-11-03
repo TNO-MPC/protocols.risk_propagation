@@ -8,4 +8,4 @@ Implementation of the Secure Risk Propagation
 # https://mypy.readthedocs.io/en/stable/command_line.html#cmdoption-mypy-no-implicit-reexport
 from .player import Player as Player
 
-__version__ = "2.2.0"
+__version__ = "2.2.1"

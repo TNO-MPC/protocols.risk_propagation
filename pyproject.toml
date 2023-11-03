@@ -26,7 +26,7 @@ classifiers = [
     "Typing :: Typed",
     "Topic :: Security :: Cryptography",
 ]
-urls = {Homepage = "https://pet.tno.nl/", Documentation = "https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.2.0", Source = "https://github.com/TNO-MPC/protocols.risk_propagation"}
+urls = {Homepage = "https://pet.tno.nl/", Documentation = "https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.2.1", Source = "https://github.com/TNO-MPC/protocols.risk_propagation"}
 dynamic = ["version"]
 requires-python = ">=3.8"
 dependencies = [

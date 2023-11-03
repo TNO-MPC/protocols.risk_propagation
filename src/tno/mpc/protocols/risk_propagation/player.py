@@ -160,6 +160,7 @@ class Player:
 
         :param period_z: The period z that should be used.
         """
+        self._period = period_z
         for bank in self.banks:
             bank.set_current_period(period_z)
 
