@@ -6,8 +6,8 @@ build-backend = "setuptools.build_meta"
 name = "tno.mpc.protocols.risk_propagation"
 description = "Secure risk propagation using distributed Paillier"
 readme = "README.md"
-authors = [{name = "TNO PET Lab", email = "petlab@tno.nl"}]
-maintainers = [{name = "TNO PET Lab", email = "petlab@tno.nl"}]
+authors = [{ name = "TNO PET Lab", email = "petlab@tno.nl" }]
+maintainers = [{ name = "TNO PET Lab", email = "petlab@tno.nl" }]
 keywords = [
     "TNO",
     "MPC",
@@ -15,7 +15,7 @@ keywords = [
     "protocols",
     "risk propagation",
 ]
-license = {text = "Apache License, Version 2.0"}
+license = { text = "Apache License, Version 2.0" }
 classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
@@ -26,11 +26,11 @@ classifiers = [
     "Typing :: Typed",
     "Topic :: Security :: Cryptography",
 ]
-urls = {Homepage = "https://pet.tno.nl/", Documentation = "https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.2.1", Source = "https://github.com/TNO-MPC/protocols.risk_propagation"}
+urls = { Homepage = "https://pet.tno.nl/", Documentation = "https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.2.3", Source = "https://github.com/TNO-Mpc/protocols.risk_propagation" }
 dynamic = ["version"]
 requires-python = ">=3.8"
 dependencies = [
-    "numpy",
+    "numpy>=1.24,<3",
     "tno.mpc.communication~=4.8,>=4.8.1",
     "tno.mpc.encryption_schemes.paillier", # version is constrainted by tno.mpc.protocols.distributed_keygen
     "tno.mpc.protocols.distributed_keygen~=4.0",
@@ -45,7 +45,7 @@ tests = [
     "numpy>=1.21",
     "pandas",
     "pandas-stubs",
-    "pytest",
+    "pytest>=8.1",
     "pytest-asyncio",
 ]
 
@@ -59,3 +59,58 @@ version = {attr = "tno.mpc.protocols.risk_propagation.__version__"}
 "*" = ["py.typed"]
 "tno.mpc.protocols.risk_propagation" = ["test/test_data/*.csv"]
 
+[tool.coverage.run]
+branch = true
+omit = ["*/test/*"]
+
+[tool.coverage.report]
+precision = 2
+show_missing = true
+
+[tool.pytest.ini_options]
+addopts = "--fixture-pool-scope module"
+filterwarnings = [
+    "error:.*ciphertext:UserWarning",
+    "error:.*randomness:UserWarning",
+]
+
+[tool.isort]
+profile = "black"
+known_tno = "tno"
+known_first_party = "tno.mpc.protocols.risk_propagation"
+sections = "FUTURE,STDLIB,THIRDPARTY,TNO,FIRSTPARTY,LOCALFOLDER"
+no_lines_before = "LOCALFOLDER"
+
+[tool.mypy]
+plugins = "numpy.typing.mypy_plugin"
+mypy_path = "src,stubs"
+strict = true
+show_error_context = true
+namespace_packages = true
+explicit_package_bases = true
+
+[tool.tbump.version]
+current = "2.2.3"
+regex = '''
+\d+\.\d+\.\d+(-(.*))?
+'''
+
+[tool.tbump.git]
+message_template = "Bump to {new_version}"
+tag_template = "v{new_version}"
+
+    [[tool.tbump.file]]
+    src = "pyproject.toml"
+    search = "current = \"{current_version}\""
+
+    [[tool.tbump.file]]
+    src = "src/tno/mpc/protocols/risk_propagation/__init__.py"
+    search = "__version__ = \"{current_version}\""
+
+    [[tool.tbump.file]]
+    src = "CITATION.cff"
+    search = "version: {current_version}"
+
+    [[tool.tbump.file]]
+    src = "README.md"
+    search = '\[here\]\(https:\/\/docs.pet.tno.nl/[^\.]*\/{current_version}'

@@ -1,6 +1,7 @@
 """
 Module containing tests that can be ran using pytest to test the risk propagation functionality
 """
+
 from __future__ import annotations
 
 import asyncio

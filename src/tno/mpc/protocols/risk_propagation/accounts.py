@@ -1,6 +1,7 @@
 """
 Configuration of a dictionary of bank accounts
 """
+
 from __future__ import annotations
 
 import logging
@@ -17,7 +18,7 @@ from .account import Account
 
 logger = logging.getLogger(__name__)
 # the expected data type for the nodes
-nodes_expected_dtype = np.dtype([("id", np.unicode_, 100), ("risk_score", np.float64)])
+nodes_expected_dtype = np.dtype([("id", np.str_, 100), ("risk_score", np.float64)])
 
 
 class Accounts(MutableMapping[str, Account]):
@@ -124,7 +125,7 @@ class Accounts(MutableMapping[str, Account]):
 
     def get_accounts(
         self, account_keys: set[str] | None = None
-    ) -> ValuesView[Account] | Generator[Account, None, None]:
+    ) -> ValuesView[Account] | Generator[Account]:
         """
         Retrieves all accounts or a subset if account_keys is provided
 

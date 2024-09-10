@@ -1,6 +1,7 @@
 """
 Configuration of a transaction
 """
+
 from dataclasses import dataclass
 
 

@@ -1,6 +1,7 @@
 """
 Script which can be used to generate new test data for the comparison between plaintext and secure risk propagation.
 """
+
 from __future__ import annotations
 
 import os

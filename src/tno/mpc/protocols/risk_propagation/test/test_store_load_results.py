@@ -1,6 +1,7 @@
 """
 Compare the result of secure risk propagation with the risk scores when loading intermediate results.
 """
+
 from __future__ import annotations
 
 import asyncio

@@ -10,6 +10,7 @@ Preprocessing should be done in the following way:
     Ultimately, this should be represented as a dictionary that maps each node in period Z to a dictionary with as keys the other nodes that made a transaction to this node and as value the (aggregated) amount transferred from that node. Put the dictionaries for all Z's (for example 4) into a list in the order of the Z's "dics_transactions".
 5.  For each period Z, compute for each node in the transaction network from step 4 the total amount of money received by this node and put it in a dictionary mapping the node to the total amount received. Put these in a list "dics_total" that matches the order of the Z's and the order of the list resulting from step 4.
 """
+
 from __future__ import annotations
 
 import copy

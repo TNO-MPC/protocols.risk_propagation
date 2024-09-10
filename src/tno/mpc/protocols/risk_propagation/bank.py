@@ -1,6 +1,7 @@
 """
 Configuration of a bank
 """
+
 from __future__ import annotations
 
 import logging
@@ -21,10 +22,10 @@ logger = logging.getLogger(__name__)
 # the expected data type for the transactions
 transactions_expected_dtype = np.dtype(
     [
-        ("id_source", np.unicode_, 100),
-        ("bank_source", np.unicode_, 100),
-        ("id_destination", np.unicode_, 100),
-        ("bank_destination", np.unicode_, 100),
+        ("id_source", np.str_, 100),
+        ("bank_source", np.str_, 100),
+        ("id_destination", np.str_, 100),
+        ("bank_destination", np.str_, 100),
         ("amount", np.int32),
     ]
 )
@@ -248,7 +249,7 @@ class Bank:
         # therefore the current_accounts set is created once and kept up to date with new accounts
         current_accounts = self.accounts
         logger.info(
-            f"Processing {sum((len(period) for period in typed_array))} transactions"
+            f"Processing {sum(len(period) for period in typed_array)} transactions"
         )
         for period, transactions in enumerate(typed_array):
             for transaction in transactions:

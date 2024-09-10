@@ -1,6 +1,7 @@
 """
 Test fixtures
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -195,7 +196,7 @@ async def fixture_charlie(
     :return: player instance
     """
     alice, bob, charlie = get_names_of_pools(http_pool_trio)
-    account_datatype = np.dtype([("id", np.unicode_, 100), ("risk_score", np.float64)])
+    account_datatype = np.dtype([("id", np.str_, 100), ("risk_score", np.float64)])
     account_array: npt.NDArray[np.object_] = np.array(
         [("g", 0.0), ("h", 0.0), ("i", 0.2)], dtype=account_datatype
     )

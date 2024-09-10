@@ -1,6 +1,7 @@
 """
 Configuration of a bank account
 """
+
 from __future__ import annotations
 
 from typing import Generator, cast
@@ -55,7 +56,7 @@ class Account:
         )
 
     @property
-    def amounts(self) -> Generator[int, None, None]:
+    def amounts(self) -> Generator[int]:
         """
         A generator of all transaction amounts
 

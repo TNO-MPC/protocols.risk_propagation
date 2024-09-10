@@ -1,6 +1,7 @@
 """
 Compare the result of plaintext risk propagation with the secure risk propagation.
 """
+
 from __future__ import annotations
 
 import asyncio

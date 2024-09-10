@@ -1,6 +1,7 @@
 """
 Module containing test data for usage in the tests.
 """
+
 from __future__ import annotations
 
 import csv

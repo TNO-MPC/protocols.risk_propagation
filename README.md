@@ -1,36 +1,49 @@
-# TNO PET Lab - secure Multi-Party Computation (MPC) - Protocols - Secure Risk Propagation
+# TNO PET Lab - secure Multi-Party Computation (MPC) - Protocols - Risk Propagation
+
+Secure Risk Propagation initially developed within the MPC4AML project.
+
+### PET Lab
 
 The TNO PET Lab consists of generic software components, procedures, and functionalities developed and maintained on a regular basis to facilitate and aid in the development of PET solutions. The lab is a cross-project initiative allowing us to integrate and reuse previously developed PET functionalities to boost the development of new protocols and solutions.
 
-The package tno.mpc.protocols.risk_propagation is part of the TNO Python Toolbox.
+The package `tno.mpc.protocols.risk_propagation` is part of the [TNO Python Toolbox](https://github.com/TNO-PET).
 
-The research activities that led to this protocol and implementation were supported by ABN AMRO, CWI, Rabobank, TMNL, De Volksbank and PPS-surcharge for Research and Innovation of the Dutch Ministry of Economic Affairs and Climate Policy, and TNO's Appl.AI programme.
-
-*Limitations in (end-)use: the content of this software package may solely be used for applications that comply with international export control laws.*
+_Limitations in (end-)use: the content of this software package may solely be used for applications that comply with international export control laws._  
+_This implementation of cryptographic software has not been audited. Use at your own risk._
 
 ## Documentation
 
-Documentation of the tno.mpc.protocols.risk_propagation package can be found [here](https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.2.1).
+Documentation of the `tno.mpc.protocols.risk_propagation` package can be found
+[here](https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.2.3).
 
 ## Install
 
-Easily install the tno.mpc.protocols.risk_propagation package using pip:
+Easily install the `tno.mpc.protocols.risk_propagation` package using `pip`:
+
 ```console
 $ python -m pip install tno.mpc.protocols.risk_propagation
 ```
 
+_Note:_ If you are cloning the repository and wish to edit the source code, be
+sure to install the package in editable mode:
+
+```console
+$ python -m pip install -e 'tno.mpc.protocols.risk_propagation'
+```
+
 If you wish to run the tests you can use:
+
 ```console
 $ python -m pip install 'tno.mpc.protocols.risk_propagation[tests]'
 ```
+_Note:_ A significant performance improvement can be achieved by installing the GMPY2 library.
 
-### Note:
-A significant performance improvement can be achieved by installing the GMPY2 library.
 ```console
 $ python -m pip install 'tno.mpc.protocols.risk_propagation[gmpy]'
 ```
 
 ## Protocol description
+
 Risk propagation is an algorithm that propagates risk scores through a (transaction) network.
 Using distributed partial homomorphic encryption, the secure risk propagation implementation performs this algorithm on a network that is distributed among multiple parties.
 As input of the algorithm, every party possesses a list of nodes (i.e. bank accounts) with initial risk scores and has a list of transactions (weighted, directed edges) from and to its bank accounts.
@@ -39,7 +52,7 @@ After a set number of iterations, the eventual risk scores are revealed to the p
 
 In [ERCIM News 126 (July 2021)](https://ercim-news.ercim.eu/en126/special/privacy-preserving-collaborative-money-laundering-detection), we presented a more elaborate protocol descriptions. Figure 1 demonstrates a high-level overview of the idea behind the protocol. Figure 2 visualizes the decentralized approach.
 <figure>
-  <img src="https://raw.githubusercontent.com/TNO-MPC/protocols.risk_propagation/main/assets/risk-propagation-overview.svg" width=100% alt="Risk Propagation High Level Overview"/>
+  <img src="assets/risk-propagation-overview.svg" width=100% alt="Risk Propagation High Level Overview"/>
   <figcaption>
 
 __Figure 1.__ _We consider a three-bank scenario (Orange, Blue, and Purple). In this scenario the first (left) account at bank Orange is classified as high risk (due to e.g., large cash deposits) by bank Orange.
@@ -50,7 +63,7 @@ However, how can we achieve something similar when there is only partial (local)
 </figure>
 
 <figure>
-  <img src="https://raw.githubusercontent.com/TNO-MPC/protocols.risk_propagation/main/assets/approach.svg" width=100% alt="Risk Propagation Decentralized Approach"/>
+  <img src="assets/approach.svg" width=100% alt="Risk Propagation Decentralized Approach"/>
   <figcaption>
 
 __Figure 2.__ _In our approach, the data is analyzed in a decentralized manner. From left-to-right, we visualize encryption,

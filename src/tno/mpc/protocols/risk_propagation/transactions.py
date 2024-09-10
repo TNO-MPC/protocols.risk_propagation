@@ -1,6 +1,7 @@
 """
 Configuration of a list of transactions
 """
+
 from __future__ import annotations
 
 from typing import Iterator
