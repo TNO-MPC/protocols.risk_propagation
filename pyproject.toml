@@ -26,9 +26,9 @@ classifiers = [
     "Typing :: Typed",
     "Topic :: Security :: Cryptography",
 ]
-urls = { Homepage = "https://pet.tno.nl/", Documentation = "https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.2.3", Source = "https://github.com/TNO-Mpc/protocols.risk_propagation" }
+urls = { Homepage = "https://pet.tno.nl/", Documentation = "https://docs.pet.tno.nl/mpc/protocols/risk_propagation/2.3.4", Source = "https://github.com/TNO-MPC/protocols.risk_propagation" }
 dynamic = ["version"]
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "numpy>=1.24,<3",
     "tno.mpc.communication~=4.8,>=4.8.1",
@@ -57,7 +57,10 @@ version = {attr = "tno.mpc.protocols.risk_propagation.__version__"}
 
 [tool.setuptools.package-data]
 "*" = ["py.typed"]
-"tno.mpc.protocols.risk_propagation" = ["test/test_data/*.csv"]
+"tno.mpc.protocols.risk_propagation" = [
+  "test/test_data/*.csv",
+  "test/test_data/*/*.csv",
+]
 
 [tool.coverage.run]
 branch = true
@@ -90,7 +93,7 @@ namespace_packages = true
 explicit_package_bases = true
 
 [tool.tbump.version]
-current = "2.2.3"
+current = "2.3.4"
 regex = '''
 \d+\.\d+\.\d+(-(.*))?
 '''

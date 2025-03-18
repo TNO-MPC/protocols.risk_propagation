@@ -5,7 +5,7 @@ Configuration of a dictionary of bank accounts
 from __future__ import annotations
 
 import logging
-from typing import Generator, Iterator, MutableMapping, ValuesView
+from collections.abc import Generator, Iterator, MutableMapping, ValuesView
 
 import numpy as np
 import numpy.typing as npt

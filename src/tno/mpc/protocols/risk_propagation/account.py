@@ -4,7 +4,8 @@ Configuration of a bank account
 
 from __future__ import annotations
 
-from typing import Generator, cast
+from collections.abc import Generator
+from typing import cast
 
 from tno.mpc.encryption_schemes.paillier import Paillier, PaillierCiphertext
 from tno.mpc.protocols.distributed_keygen import DistributedPaillier

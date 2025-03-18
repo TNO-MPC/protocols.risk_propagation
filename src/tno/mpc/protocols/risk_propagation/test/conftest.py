@@ -5,7 +5,10 @@ Test fixtures
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Tuple, cast
+import os
+from collections.abc import AsyncGenerator
+from pathlib import Path
+from typing import Any, cast
 
 import numpy as np
 import numpy.typing as npt
@@ -71,10 +74,51 @@ def get_names_of_pools(pools: tuple[Pool, ...]) -> tuple[str, ...]:
     return (tuple(pools[1].pool_handlers)[0],) + tuple(pools[0].pool_handlers)
 
 
-@pytest_asyncio.fixture(name="distributed_schemes", scope=determine_pool_scope)
-async def fixture_distributed_schemes(
-    http_pool_trio: tuple[Pool, Pool, Pool]
-) -> tuple[DistributedPaillier, DistributedPaillier, DistributedPaillier]:
+@pytest_asyncio.fixture(
+    name="distributed_schemes",
+    scope="module",
+)
+async def fixture_distributed_schemes_from_file(
+    http_pool_trio: tuple[Pool, ...],
+) -> AsyncGenerator[tuple[DistributedPaillier, ...]]:
+    """
+    Constructs schemes to use for distributed key generation.
+
+    :param pool_http: collection of communication pools
+    :param request: Fixture request
+    :return: a collection of schemes
+    """
+    corruption_threshold = 1
+    base_path = Path(f"{os.path.dirname(__file__)}/test_data/keys")
+    number_of_parties = 3
+    file_paths = [
+        base_path.joinpath(
+            f"distributed_key_threshold_{corruption_threshold}_{number_of_parties}parties_{index}.obj"
+        )
+        for index in range(number_of_parties)
+    ]
+
+    distributed_schemes: tuple[DistributedPaillier, ...] = tuple(
+        await asyncio.gather(
+            *[
+                DistributedPaillier.load_private_key_from_bytes(
+                    file_paths[index].read_bytes(), http_pool_trio[index], False
+                )
+                for index in range(number_of_parties)
+            ]
+        )
+    )
+    yield distributed_schemes
+    for scheme in distributed_schemes:
+        scheme.shut_down()
+
+
+@pytest_asyncio.fixture(name="distributed_schemes_fresh", scope=determine_pool_scope)
+async def fixture_distributed_schemes_fresh(
+    http_pool_trio: tuple[Pool, Pool, Pool],
+) -> AsyncGenerator[
+    tuple[DistributedPaillier, DistributedPaillier, DistributedPaillier]
+]:
     """
     Returns a collection of distributed paillier instances
 
@@ -102,10 +146,12 @@ async def fixture_distributed_schemes(
             for _ in range(3)
         ]
     )
-    return cast(
-        Tuple[DistributedPaillier, DistributedPaillier, DistributedPaillier],
+    yield cast(
+        tuple[DistributedPaillier, DistributedPaillier, DistributedPaillier],
         distributed_schemes,
     )
+    for scheme in distributed_schemes:
+        scheme.shut_down()
 
 
 @pytest_asyncio.fixture(name="alice")

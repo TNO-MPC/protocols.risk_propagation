@@ -1,10 +1,12 @@
 #!/usr/bin/python3
 """
-    Example usage for performing secure risk propagation
-    Run three separate instances e.g.,
-    $ python example_usage.py -p Alice
-    $ python example_usage.py -p Bob
-    $ python example_usage.py -p Charlie
+Example usage for performing secure risk propagation
+Run three separate instances e.g.,
+$ python example_usage.py -p Alice
+$ python example_usage.py -p Bob
+$ python example_usage.py -p Charlie
+or
+$ python example_usage.py -p all
 """
 import argparse
 import asyncio
@@ -86,21 +88,22 @@ async def generate_instance(player, distributed=True):
             name, party["address"], port=party["port"] if "port" in party else 80
         )  # default port=80
 
+    nodes, transactions = None, None
     if player == "alice":
-        from tno.mpc.protocols.risk_propagation.example_data import nodes_A as nodes
-        from tno.mpc.protocols.risk_propagation.example_data import (
-            transactions_A as transactions,
-        )
+        from tno.mpc.protocols.risk_propagation.test.test_data.small import input_data
+
+        nodes = input_data["numpy_nodes_A"]
+        transactions = input_data["numpy_transactions_A"]
     elif player == "bob":
-        from tno.mpc.protocols.risk_propagation.example_data import nodes_B as nodes
-        from tno.mpc.protocols.risk_propagation.example_data import (
-            transactions_B as transactions,
-        )
+        from tno.mpc.protocols.risk_propagation.test.test_data.small import input_data
+
+        nodes = input_data["numpy_nodes_B"]
+        transactions = input_data["numpy_transactions_B"]
     elif player == "charlie":
-        from tno.mpc.protocols.risk_propagation.example_data import nodes_C as nodes
-        from tno.mpc.protocols.risk_propagation.example_data import (
-            transactions_C as transactions,
-        )
+        from tno.mpc.protocols.risk_propagation.test.test_data.small import input_data
+
+        nodes = input_data["numpy_nodes_C"]
+        transactions = input_data["numpy_transactions_C"]
 
     await main(player, pool, nodes, transactions, distributed)
 

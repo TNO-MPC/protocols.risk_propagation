@@ -18,5 +18,5 @@ contact:
 repository-code: https://github.com/TNO-MPC/protocols.risk_propagation
 repository-artifact: https://pypi.org/project/tno.mpc.protocols.risk_propagation
 title: TNO PET Lab - secure Multi-Party Computation (MPC) - Protocols - Risk Propagation
-version: 2.2.3
-date-released: 2024-10-16
+version: 2.3.4
+date-released: 2025-03-18
